@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
     }
     
     std::string command = argv[1];
-    std::string compressedBlob = argv[3];
+    std::string blob = argv[3];
 
     
 
@@ -60,14 +60,14 @@ int main(int argc, char *argv[])
 
         // .substr(start_index, length)
         // Start at index 0, take 2 characters
-        std::string blobDirectory = compressedBlob.substr(0, 2); 
+        std::string blobDirectory = blob.substr(0, 2); 
         
         // .substr(start_index)
         // Start at index 2 and take everything until the end of the string
-        std::string blobFileName = compressedBlob.substr(2);
+        std::string blobFileName = blob.substr(2);
 
-        std::string fullPath = blobDirectory + "/" + blobFileName;
-        std::string fullBlob;
+        std::string fullPath = ".git/objects/" + blobDirectory + "/" + blobFileName;
+        std::string blobObject;
 
         std::ifstream file (fullPath, std::ios::binary | std::ios::ate);
         if(!file.is_open())
@@ -83,20 +83,21 @@ int main(int argc, char *argv[])
 
         if (file.read(buffer.data(), size)) 
         {
-            fullBlob = buffer;
+            blobObject = buffer;
         } 
         else 
         {
             throw std::runtime_error("Failed to read the file entirely.");
         }
 
-        std::stringstream ss(fullBlob);
+        std::stringstream ss(blobObject);
         std::string blobBody;
         getline(ss, blobBody, '\0');
         std::cout << blobBody;
 
     } 
-    else {
+    else 
+    {
         std::cerr << "Unknown command " << command << '\n';
         return EXIT_FAILURE;
     }
