@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <cstring>
 #include <sstream>
+#include <vector>
 
 std::string decompress_zlib(const std::string& compressed_data);
 
@@ -51,8 +52,45 @@ int main(int argc, char *argv[])
     }
     else if(command == "cat-file")
     {
-        std::string blob = decompress_zlib(compressedBlob);
-        std::stringstream ss(blob);
+        // std::string blob = decompress_zlib(compressedBlob);
+        // std::stringstream ss(blob);
+        // std::string blobBody;
+        // getline(ss, blobBody, '\0');
+        // std::cout << blobBody;
+
+        // .substr(start_index, length)
+        // Start at index 0, take 2 characters
+        std::string blobDirectory = compressedBlob.substr(0, 2); 
+        
+        // .substr(start_index)
+        // Start at index 2 and take everything until the end of the string
+        std::string blobFileName = compressedBlob.substr(2);
+
+        std::string fullPath = blobDirectory + "/" + blobFileName;
+        std::string fullBlob;
+
+        std::ifstream file (fullPath, std::ios::binary | std::ios::ate);
+        if(!file.is_open())
+        {
+            std::cerr << "Error opening file\n";
+            return EXIT_FAILURE;
+        }
+        std::streamsize size = file.tellg();
+
+        file.seekg(0, std::ios::beg);
+
+        std::string buffer(size, '\0');
+
+        if (file.read(buffer.data(), size)) 
+        {
+            fullBlob = buffer;
+        } 
+        else 
+        {
+            throw std::runtime_error("Failed to read the file entirely.");
+        }
+
+        std::stringstream ss(fullBlob);
         std::string blobBody;
         getline(ss, blobBody, '\0');
         std::cout << blobBody;
