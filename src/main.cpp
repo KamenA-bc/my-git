@@ -52,12 +52,6 @@ int main(int argc, char *argv[])
     }
     else if(command == "cat-file")
     {
-        // std::string blob = decompress_zlib(compressedBlob);
-        // std::stringstream ss(blob);
-        // std::string blobBody;
-        // getline(ss, blobBody, '\0');
-        // std::cout << blobBody;
-
         // .substr(start_index, length)
         // Start at index 0, take 2 characters
         std::string blobDirectory = blob.substr(0, 2); 
