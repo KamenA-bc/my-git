@@ -52,12 +52,8 @@ int main(int argc, char *argv[])
     }
     else if(command == "cat-file")
     {
-        // .substr(start_index, length)
-        // Start at index 0, take 2 characters
         std::string blobDirectory = blob.substr(0, 2); 
         
-        // .substr(start_index)
-        // Start at index 2 and take everything until the end of the string
         std::string blobFileName = blob.substr(2);
 
         std::string fullPath = ".git/objects/" + blobDirectory + "/" + blobFileName;
@@ -94,8 +90,6 @@ int main(int argc, char *argv[])
 
             std::cout << blobBody;
             }
-
-
 
     } 
     else 
