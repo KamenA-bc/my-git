@@ -89,8 +89,8 @@ int main(int argc, char *argv[])
         {
             throw std::runtime_error("Failed to read the file entirely.");
         }
-
-        std::stringstream ss(blobObject);
+        std::string decompressedBlob = decompress_zlib(blobObject);
+        std::stringstream ss(decompressedBlob);
         std::string blobBody;
         getline(ss, blobBody, '\0');
         std::cout << blobBody;
