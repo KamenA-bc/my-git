@@ -2,6 +2,12 @@
 #include <filesystem>
 #include <fstream>
 #include <string>
+#include <zlib.h>
+#include <stdexcept>
+#include <cstring>
+#include <sstream>
+
+std::string decompress_zlib(const std::string& compressed_data);
 
 int main(int argc, char *argv[])
 {
@@ -18,7 +24,10 @@ int main(int argc, char *argv[])
     }
     
     std::string command = argv[1];
+    std::string compressedBlob = argv[3];
+
     
+
     if (command == "init") {
         try {
             std::filesystem::create_directory(".git");
@@ -39,10 +48,77 @@ int main(int argc, char *argv[])
             std::cerr << e.what() << '\n';
             return EXIT_FAILURE;
         }
-    } else {
+    }
+    else if(command == "cat-file")
+    {
+        std::string blob = decompress_zlib(compressedBlob);
+        std::stringstream ss(blob);
+        std::string blobBody;
+        getline(ss, blobBody, '\0');
+        std::cout << blobBody;
+
+    } 
+    else {
         std::cerr << "Unknown command " << command << '\n';
         return EXIT_FAILURE;
     }
+
+
     
     return EXIT_SUCCESS;
+}
+
+std::string decompress_zlib(const std::string& compressed_data) {
+    // 1. Initialize the zlib stream structure
+    z_stream zs;
+    std::memset(&zs, 0, sizeof(zs));
+
+    // inflateInit initializes the decompression state. 
+    // It returns Z_OK if successful.
+    if (inflateInit(&zs) != Z_OK) {
+        throw std::runtime_error("inflateInit failed while decompressing.");
+    }
+
+    // 2. Point zlib to our compressed input data
+    // next_in expects a pointer to the start of the data
+    // avail_in tells it exactly how many bytes it has to read
+    zs.next_in = reinterpret_cast<Bytef*>(const_cast<char*>(compressed_data.data()));
+    zs.avail_in = compressed_data.size();
+
+    int ret;
+    char outbuffer[32768]; // A 32KB buffer to hold chunks of decompressed data
+    std::string decompressed_string;
+
+    // 3. Loop to decompress the data in chunks
+    do {
+        // Reset the output pointer and available output size for this chunk
+        zs.next_out = reinterpret_cast<Bytef*>(outbuffer);
+        zs.avail_out = sizeof(outbuffer);
+
+        // inflate does the actual decompression work.
+        // It reads from next_in and writes to next_out.
+        ret = inflate(&zs, Z_NO_FLUSH);
+
+        // Check for catastrophic decompression errors
+        if (ret == Z_NEED_DICT || ret == Z_DATA_ERROR || ret == Z_MEM_ERROR) {
+            inflateEnd(&zs);
+            throw std::runtime_error("Exception during zlib decompression (corrupt data).");
+        }
+
+        // Calculate how many bytes were newly decompressed in this loop iteration
+        // and append them to our final string.
+        int bytes_decompressed = sizeof(outbuffer) - zs.avail_out;
+        decompressed_string.append(outbuffer, bytes_decompressed);
+
+    } while (ret == Z_OK); // Z_OK means there's more data to process
+
+    // 4. Clean up the zlib stream to free memory
+    inflateEnd(&zs);
+
+    // If the loop finished but didn't reach the end of the stream, something went wrong
+    if (ret != Z_STREAM_END) {
+        throw std::runtime_error("Exception during zlib decompression (incomplete stream).");
+    }
+
+    return decompressed_string;
 }
