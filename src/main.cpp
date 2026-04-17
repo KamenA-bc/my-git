@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
         std::string decompressedBlob = decompress_zlib(blobObject);
         std::stringstream ss(decompressedBlob);
         std::string blobBody;
-        getline(ss, blobBody, '\0');
+        while(getline(ss, blobBody, '\0'))
         std::cout << blobBody;
 
     } 
