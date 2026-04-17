@@ -92,8 +92,16 @@ int main(int argc, char *argv[])
         std::string decompressedBlob = decompress_zlib(blobObject);
         std::stringstream ss(decompressedBlob);
         std::string blobBody;
-        while(getline(ss, blobBody, '\0'))
-        std::cout << blobBody;
+        size_t null_pos = decompressedBlob.find('\0');
+
+            if (null_pos != std::string::npos) 
+            {
+            std::string blobBody = decompressedBlob.substr(null_pos + 1);
+
+            std::cout << blobBody;
+            }
+
+
 
     } 
     else 
