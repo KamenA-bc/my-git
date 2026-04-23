@@ -8,8 +8,10 @@
 #include <sstream>
 #include <vector>
 #include <openssl/sha.h>
+#include <iomanip>
 
 std::string decompress_zlib(const std::string& compressed_data);
+std::string compress_zlib(const std::string& data);
 
 int main(int argc, char *argv[])
 {
@@ -100,7 +102,7 @@ int main(int argc, char *argv[])
         std::string flag = argv[2];
         std::string fileData;
 
-        std::ifstream file(fileName);
+        std::ifstream file(fileName, std::ios::binary | std::ios::ate);
 
         if(!file.is_open())
         {
@@ -118,7 +120,7 @@ int main(int argc, char *argv[])
             fileData = buffer;
         } 
 
-        std::string object = "blob " + size + '\0' + fileData;
+        std::string object = "blob " + std::to_string(size) + '\0' + fileData;
 
         unsigned char hash[SHA_DIGEST_LENGTH]; // SHA_DIGEST_LENGTH is 20 bytes
         
@@ -150,8 +152,25 @@ int main(int argc, char *argv[])
         {
             std::string full_dir = ".git/objects/" + dir_name + "/" + file_name;
 
-            std::string compressedBody = compress2(objectBody);
+            std::string compressedBody = compress_zlib(objectBody);
 
+            std::filesystem::create_directory(".git/objects/" + dir_name);
+
+            std::ofstream outFile(full_dir, std::ios::binary);
+
+            if (outFile.is_open()) {
+
+                outFile.write(compressedBody.data(), compressedBody.size());
+
+                outFile.close();
+
+            } else {
+
+                std::cerr << "Failed to create object file.\n";
+
+                return EXIT_FAILURE;
+
+            }
         }
     }
     else 
@@ -164,6 +183,59 @@ int main(int argc, char *argv[])
     
     return EXIT_SUCCESS;
 }
+
+
+std::string compress_zlib(const std::string &data) {
+
+  z_stream zs;
+
+  std::memset(&zs, 0, sizeof(zs));
+
+  if (deflateInit(&zs, Z_BEST_COMPRESSION) != Z_OK) {
+
+    throw std::runtime_error("deflateInit failed while compressing.");
+
+  }
+
+  zs.next_in = reinterpret_cast<Bytef *>(const_cast<char *>(data.data()));
+
+  zs.avail_in = data.size();
+
+  int ret;
+
+  char outbuffer[32768];
+
+  std::string compressed_string;
+
+  do {
+
+    zs.next_out = reinterpret_cast<Bytef *>(outbuffer);
+
+    zs.avail_out = sizeof(outbuffer);
+
+    ret = deflate(&zs, Z_FINISH);
+
+    int have = sizeof(outbuffer) - zs.avail_out;
+
+    compressed_string.append(outbuffer, have);
+
+  } while (ret == Z_OK);
+
+  deflateEnd(&zs);
+
+  if (ret != Z_STREAM_END) {
+
+    throw std::runtime_error(
+
+        "Exception during zlib compression (incomplete stream).");
+
+  }
+
+  return compressed_string;
+
+}
+
+
 
 
 std::string decompress_zlib(const std::string& compressed_data) {
