@@ -157,7 +157,9 @@ int main(int argc, char *argv[])
 
                 outFile.close();
 
-            } else {
+            } 
+            else 
+            {
 
                 std::cerr << "Failed to create object file.\n";
 
