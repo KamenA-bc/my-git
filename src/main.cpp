@@ -140,19 +140,12 @@ int main(int argc, char *argv[])
         std::string dir_name = hashToString.substr(0, 2);
         std::string file_name = hashToString.substr(2);
 
-        size_t null_pos = hashToString.find('\0');
-        std::string objectBody; 
-            if (null_pos != std::string::npos) 
-            {
-                objectBody = hashToString.substr(null_pos + 1);
-            }
-
 
         if(flag == "-w")
         {
             std::string full_dir = ".git/objects/" + dir_name + "/" + file_name;
 
-            std::string compressedBody = compress_zlib(objectBody);
+            std::string compressedBody = compress_zlib(object);
 
             std::filesystem::create_directory(".git/objects/" + dir_name);
 
