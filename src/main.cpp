@@ -7,6 +7,7 @@
 #include <cstring>
 #include <sstream>
 #include <vector>
+#include <openssl/sha.h>
 
 std::string decompress_zlib(const std::string& compressed_data);
 
@@ -25,7 +26,6 @@ int main(int argc, char *argv[])
     }
     
     std::string command = argv[1];
-    std::string blob = argv[3];
 
     
 
@@ -52,6 +52,7 @@ int main(int argc, char *argv[])
     }
     else if(command == "cat-file")
     {
+        std::string blob = argv[3];
         std::string blobDirectory = blob.substr(0, 2); 
         
         std::string blobFileName = blob.substr(2);
@@ -79,6 +80,7 @@ int main(int argc, char *argv[])
         {
             throw std::runtime_error("Failed to read the file entirely.");
         }
+
         std::string decompressedBlob = decompress_zlib(blobObject);
         std::stringstream ss(decompressedBlob);
         std::string blobBody;
@@ -91,7 +93,63 @@ int main(int argc, char *argv[])
             std::cout << blobBody;
             }
 
-    } 
+    }
+    else if(command == "hash-object")
+    {
+        std::string fileName = argv[3];
+        std::string flag = argv[2];
+        std::string fileData;
+
+        std::ifstream file(fileName);
+
+        if(!file.is_open())
+        {
+            std::cerr << "Error opening file\n";
+            return EXIT_FAILURE;
+        }
+        std::streamsize size = file.tellg();
+
+        file.seekg(0, std::ios::beg);
+
+        std::string buffer(size, '\0');
+
+        if (file.read(buffer.data(), size)) 
+        {
+            fileData = buffer;
+        } 
+
+        std::string object = "blob " + size + '\0' + fileData;
+
+        unsigned char hash[SHA_DIGEST_LENGTH]; // SHA_DIGEST_LENGTH is 20 bytes
+        
+        // Perform the hash
+        SHA1(reinterpret_cast<const unsigned char*>(object.c_str()), object.length(), hash);
+
+        // Convert the raw bytes to a readable hexadecimal string
+        std::stringstream hex_stream;
+        for (int i = 0; i < SHA_DIGEST_LENGTH; ++i) {
+            hex_stream << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(hash[i]);
+        }
+
+        std::string hashToString = hex_stream.str();
+        std::string dir_name = hashToString.substr(0, 2);
+        std::string file_name = hashToString.substr(2);
+
+        size_t null_pos = hashToString.find('\0');
+        std::string objectBody; 
+            if (null_pos != std::string::npos) 
+            {
+                objectBody = hashToString.substr(null_pos + 1);
+            }
+
+
+        if(flag == "-w")
+        {
+            std::string full_dir = ".git/objects/" + dir_name + "/" + file_name;
+
+
+        }
+    }
     else 
     {
         std::cerr << "Unknown command " << command << '\n';
