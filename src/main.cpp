@@ -132,6 +132,9 @@ int main(int argc, char *argv[])
         }
 
         std::string hashToString = hex_stream.str();
+
+        std::cout << hashToString;
+
         std::string dir_name = hashToString.substr(0, 2);
         std::string file_name = hashToString.substr(2);
 
@@ -147,6 +150,7 @@ int main(int argc, char *argv[])
         {
             std::string full_dir = ".git/objects/" + dir_name + "/" + file_name;
 
+            std::string compressedBody = compress2(objectBody);
 
         }
     }
@@ -160,6 +164,7 @@ int main(int argc, char *argv[])
     
     return EXIT_SUCCESS;
 }
+
 
 std::string decompress_zlib(const std::string& compressed_data) {
     // 1. Initialize the zlib stream structure
